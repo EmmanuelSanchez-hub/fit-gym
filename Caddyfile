@@ -1,0 +1,89 @@
+# =============================================================================
+# FitGym Pro - Caddy Configuration (Production)
+# =============================================================================
+# Configuración de Caddy como reverse proxy con SSL automático
+# =============================================================================
+
+# Configuración global
+{
+    # Email para notificaciones de SSL
+    email admin@cabfi.qzz.io
+    
+    # Mantener logs de acceso
+    log {
+        output file /var/log/caddy/access.log
+        format json
+    }
+}
+
+# =============================================================================
+# PRODUCCIÓN - Con dominio y SSL automático
+# =============================================================================
+cabfi.qzz.io {
+    # Proxy a Next.js
+    reverse_proxy localhost:3000 {
+        header_up Host {host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP {remote_host}
+    }
+
+    # Compresión Gzip + Zstandard
+    encode gzip zstd
+
+    # Headers de seguridad
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        X-XSS-Protection "1; mode=block"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    }
+
+    # Archivos estáticos con caché
+    handle_path /_next/static/* {
+        root * /app/.next/static
+        header Cache-Control "public, max-age=31536000, immutable"
+        file_server
+    }
+
+    # Redirección 404 a Next.js
+    handle_errors {
+        rewrite * /{err.status_code}
+        reverse_proxy localhost:3000
+    }
+}
+
+# =============================================================================
+# DESARROLLO LOCAL - Sin SSL
+# =============================================================================
+# Puerto 81 para desarrollo local (evita conflictos con otros servicios)
+:81 {
+    # Proxy dinámico por query param (para desarrollo con múltiples servicios)
+    @transform_port_query {
+        query XTransformPort=*
+    }
+
+    handle @transform_port_query {
+        reverse_proxy localhost:{query.XTransformPort} {
+            header_up Host {host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # Proxy principal a Next.js
+    handle {
+        reverse_proxy localhost:3000 {
+            header_up Host {host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Real-IP {remote_host}
+        }
+
+        # Compresión
+        encode gzip zstd
+    }
+}

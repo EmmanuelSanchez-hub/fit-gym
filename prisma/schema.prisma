@@ -1,0 +1,253 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Roles disponibles en el sistema
+enum Rol {
+  SUPER_USUARIO
+  ADMINISTRADOR
+  RECEPCIONISTA
+  ENTRENADOR
+}
+
+// Usuario para autenticación (vinculado a empleado)
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  password     String     // Hash de la contraseña
+  rol          Rol        @default(RECEPCIONISTA)
+  empleadoId   String?    @unique
+  activo       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  // Relaciones
+  empleado     Empleado?  @relation(fields: [empleadoId], references: [id])
+  accounts     Account[]
+  sessions     Session[]
+}
+
+// Modelos requeridos por NextAuth
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Empleados del gimnasio
+model Empleado {
+  id           String   @id @default(cuid())
+  nombre       String
+  email        String   @unique
+  telefono     String?
+  cargo        String   // "Recepcionista", "Entrenador", "Administrador"
+  foto         String?
+  activo       Boolean  @default(true)
+  fechaInicio  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  user                User?
+  clientesRegistrados Cliente[]      @relation("EmpleadoClientes")
+  accesosRegistrados  Acceso[]       @relation("EmpleadoAccesos")
+  reservasCreadas     Reserva[]      @relation("EmpleadoReservas")
+  promocionesEnviadas PromocionEnviada[]
+}
+
+// Clientes del gimnasio
+model Cliente {
+  id              String   @id @default(cuid())
+  nombre          String
+  apellido        String
+  dni             String?  @unique // DNI del cliente
+  email           String   @unique
+  telefono        String
+  fechaNacimiento DateTime?
+  direccion       String?
+  foto            String?
+  huellaBiometrica String? // ID simulado de huella biométrica
+  codigoAcceso    String   @unique // Código único para acceso
+  activo          Boolean  @default(true)
+  registradoPor   String?  // ID del empleado que registró
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones
+  empleado           Empleado?         @relation("EmpleadoClientes", fields: [registradoPor], references: [id])
+  membresias         MembresiaCliente[]
+  reservas           Reserva[]
+  accesos            Acceso[]
+  promocionesRecibidas PromocionEnviada[]
+}
+
+// Planes de membresía disponibles
+model Membresia {
+  id          String   @id @default(cuid())
+  nombre      String   // "Mensual", "Trimestral", "Anual", "Premium"
+  descripcion String?
+  precio      Float
+  duracionDias Int     // Duración en días
+  beneficios  String?  // JSON string con lista de beneficios
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  clientesMembresia MembresiaCliente[]
+}
+
+// Membresías activas de clientes
+model MembresiaCliente {
+  id             String   @id @default(cuid())
+  clienteId      String
+  membresiaId    String
+  fechaInicio    DateTime @default(now())
+  fechaFin       DateTime
+  precioPagado   Float
+  estado         String   @default("activa") // "activa", "vencida", "cancelada"
+  metodoPago     String?  // "Efectivo", "Tarjeta", "Transferencia"
+  notas          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relaciones
+  cliente   Cliente    @relation(fields: [clienteId], references: [id])
+  membresia Membresia  @relation(fields: [membresiaId], references: [id])
+}
+
+// Clases/Espacios disponibles para reservar
+model Clase {
+  id          String   @id @default(cuid())
+  nombre      String   // "Spinning", "Yoga", "CrossFit", "Sala de Pesas"
+  descripcion String?
+  capacidad   Int
+  duracion    Int      // Duración en minutos
+  instructor  String?
+  diaSemana   String?  // Para clases recurrentes: "Lunes", "Martes", etc.
+  horaInicio  String?  // "08:00"
+  horaFin     String?  // "09:00"
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  reservas Reserva[]
+}
+
+// Reservas de clases/espacios
+model Reserva {
+  id           String   @id @default(cuid())
+  clienteId    String
+  claseId      String
+  empleadoId   String?  // Empleado que creó la reserva
+  fecha        DateTime // Fecha de la reserva
+  horaInicio   String
+  horaFin      String
+  estado       String   @default("confirmada") // "confirmada", "cancelada", "completada"
+  notas        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  cliente Cliente  @relation(fields: [clienteId], references: [id])
+  clase   Clase    @relation(fields: [claseId], references: [id])
+  empleado Empleado? @relation("EmpleadoReservas", fields: [empleadoId], references: [id])
+}
+
+// Registro de accesos biométricos
+model Acceso {
+  id         String   @id @default(cuid())
+  clienteId  String
+  empleadoId String?  // Empleado que validó el acceso
+  tipo       String   // "entrada", "salida"
+  metodo     String   // "biometrico", "codigo", "manual"
+  fechaHora  DateTime @default(now())
+  exitoso    Boolean  @default(true)
+  notas      String?  // Motivo si fue denegado
+
+  // Relaciones
+  cliente  Cliente   @relation(fields: [clienteId], references: [id])
+  empleado Empleado? @relation("EmpleadoAccesos", fields: [empleadoId], references: [id])
+}
+
+// Promociones disponibles
+model Promocion {
+  id          String   @id @default(cuid())
+  titulo      String
+  tipo        String   // "vencimiento_proximo", "membresia_expirada", "especial", "bienvenida"
+  descuento   Float    // Porcentaje de descuento
+  validoDesde DateTime
+  validoHasta DateTime
+  plantillaWhatsApp String? // Mensaje plantilla para WhatsApp
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  envios PromocionEnviada[]
+}
+
+// Registro de promociones enviadas
+model PromocionEnviada {
+  id           String   @id @default(cuid())
+  promocionId  String
+  clienteId    String
+  empleadoId   String?  // Empleado que envió
+  fechaEnvio   DateTime @default(now())
+  estado       String   @default("enviado") // "enviado", "leido", "respondido"
+  whatsappId   String?  // ID del mensaje en WhatsApp
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  promocion Promocion @relation(fields: [promocionId], references: [id])
+  cliente   Cliente   @relation(fields: [clienteId], references: [id])
+  empleado  Empleado? @relation(fields: [empleadoId], references: [id])
+}
+
+// Configuración del sistema
+model Configuracion {
+  id        String   @id @default(cuid())
+  clave     String   @unique
+  valor     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
