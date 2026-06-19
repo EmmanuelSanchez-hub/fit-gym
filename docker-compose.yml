@@ -1,0 +1,57 @@
+# =============================================================================
+# FitGym Pro - Docker Compose (Production)
+# =============================================================================
+# Uso: docker compose up -d
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # Aplicación Principal - Next.js (incluye WhatsApp integrado)
+  # ===========================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./db:/app/db
+      - ./public:/app/public
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:./db/custom.db
+      - NEXTAUTH_URL=https:
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - FINGERPRINT_SERVICE_URL=http://localhost:3005
+      - NEXT_TELEMETRY_DISABLED=1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Caddy - Reverse Proxy con SSL Automático
+  # ===========================================================================
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8443:8443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  default:
+    name: fitgym-network
