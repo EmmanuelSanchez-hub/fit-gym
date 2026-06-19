@@ -21,6 +21,12 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { ClienteForm, Cliente } from "../types";
+import {
+  checkFingerprintStatus,
+  connectFingerprintDevice,
+  captureFingerprint,
+  type DeviceStatus,
+} from "@/lib/fingerprint-client";
 
 interface ClienteDialogProps {
   open: boolean;
@@ -32,15 +38,6 @@ interface ClienteDialogProps {
   selectedCliente?: Cliente | null;
 }
 
-interface DeviceStatus {
-  connected: boolean;
-  deviceName: string;
-  port: string | null;
-  firmwareVersion: string | null;
-  sensorReady: boolean;
-  lastError: string | null;
-  mode: string;
-}
 
 export function ClienteDialog({
   open,
@@ -60,12 +57,7 @@ export function ClienteDialog({
     setIsDeviceLoading(true);
     setDeviceError(null);
     try {
-      const res = await fetch('/api/fingerprint/status');
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Servicio no disponible");
-      }
-      const data = await res.json();
+      const data = await checkFingerprintStatus();
       setDeviceStatus(data);
     } catch (error: any) {
       setDeviceError(error.message || "No se pudo conectar al servicio de huellas.");
@@ -96,25 +88,20 @@ export function ClienteDialog({
       if (cancelled || isProcessing) return;
       
       try {
-        // Verificar si el servicio está activo
-        const statusRes = await fetch('/api/fingerprint/status');
-        if (!statusRes.ok) return;
-        
-        const status = await statusRes.json();
+        // Verificar si el servicio está activo directamente desde el navegador
+        const status = await checkFingerprintStatus();
         if (!status.connected || !status.sensorReady) return;
         
         // Intentar capturar huella automáticamente
         isProcessing = true;
-        const captureRes = await fetch('/api/fingerprint/capture', { method: 'POST' });
+        const captureData = await captureFingerprint();
         isProcessing = false;
         
-        if (!captureRes.ok) return;
-        
-        const captureData = await captureRes.json();
+        if (!captureData.success) return;
         
         if (captureData.success && captureData.template && !cancelled && !fingerprintCaptured) {
           // Huella capturada automáticamente
-          onFormChange({ ...form, huellaBiometrica: captureData.template });
+          onFormChange({ ...form, huellaBiometrica: captureData.template ?? "" });
           setFingerprintCaptured(true);
           toast({
             title: "Huella capturada",
@@ -139,10 +126,7 @@ export function ClienteDialog({
   const handleConnectDevice = async () => {
     setIsDeviceLoading(true);
     try {
-      const res = await fetch('/api/fingerprint/connect', {
-        method: "POST",
-      });
-      if (!res.ok) throw new Error("Error al conectar");
+      await connectFingerprintDevice();
       toast({ title: "Éxito", description: "Lector de huellas conectado" });
       checkDeviceStatus();
     } catch {
@@ -168,15 +152,11 @@ export function ClienteDialog({
 
     setIsCapturing(true);
     try {
-      const res = await fetch('/api/fingerprint/capture', {
-        method: "POST",
-      });
-      if (!res.ok) throw new Error("Error al capturar");
-      const data = await res.json();
+      const data = await captureFingerprint();
 
       if (data.success) {
         setFingerprintCaptured(true);
-        onFormChange({ ...form, huellaBiometrica: data.template });
+        onFormChange({ ...form, huellaBiometrica: data.template ?? "" });
         toast({
           title: "Éxito",
           description: `Huella capturada (calidad: ${data.quality}%)`,

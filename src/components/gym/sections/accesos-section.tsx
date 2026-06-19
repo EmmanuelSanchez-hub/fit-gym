@@ -22,6 +22,10 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Acceso, Cliente } from "../types";
+import {
+  checkFingerprintStatus,
+  captureFingerprint,
+} from "@/lib/fingerprint-client";
 
 interface AccesosSectionProps {
   accesos: Acceso[];
@@ -83,21 +87,16 @@ export function AccesosSection({
       if (cancelled || isProcessing) return;
       
       try {
-        // Verificar si el servicio está activo
-        const statusRes = await fetch('/api/fingerprint/status');
-        if (!statusRes.ok) return;
-        
-        const status = await statusRes.json();
+        // Verificar si el servicio está activo directamente desde el navegador
+        const status = await checkFingerprintStatus();
         if (!status.connected || !status.sensorReady) return;
         
         // Intentar capturar huella automáticamente
         isProcessing = true;
-        const captureRes = await fetch('/api/fingerprint/capture', { method: 'POST' });
+        const captureData = await captureFingerprint();
         isProcessing = false;
         
-        if (!captureRes.ok) return;
-        
-        const captureData = await captureRes.json();
+        if (!captureData.success || !captureData.template) return;
         
         if (captureData.success && captureData.template && !cancelled) {
           // Huella capturada automáticamente - llenar campo

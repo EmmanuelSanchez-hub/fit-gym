@@ -46,6 +46,10 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import {
+  checkFingerprintStatus,
+  type DeviceStatus as FingerprintDeviceStatus,
+} from "@/lib/fingerprint-client";
 
 interface ConfiguracionSectionProps {
   userRol: string;
@@ -92,15 +96,6 @@ interface ReporteGerencial {
   }>;
 }
 
-interface DeviceStatus {
-  connected: boolean;
-  deviceName: string;
-  port: string | null;
-  firmwareVersion: string | null;
-  sensorReady: boolean;
-  lastError: string | null;
-  mode: string;
-}
 
 export function ConfiguracionSection({ userRol, onRefresh }: ConfiguracionSectionProps) {
   const [exportType, setExportType] = useState("clientes");
@@ -119,7 +114,7 @@ export function ConfiguracionSection({ userRol, onRefresh }: ConfiguracionSectio
   const [isLoadingReporte, setIsLoadingReporte] = useState(false);
   const [showReporte, setShowReporte] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [deviceStatus, setDeviceStatus] = useState<DeviceStatus | null>(null);
+  const [deviceStatus, setDeviceStatus] = useState<FingerprintDeviceStatus | null>(null);
   const [isDeviceLoading, setIsDeviceLoading] = useState(false);
   const [deviceError, setDeviceError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("exportar");
@@ -130,12 +125,7 @@ export function ConfiguracionSection({ userRol, onRefresh }: ConfiguracionSectio
   const fetchDeviceStatus = async (silent = false) => {
     if (!silent) setIsDeviceLoading(true);
     try {
-      const res = await fetch('/api/fingerprint/status');
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Servicio no disponible');
-      }
-      const data = await res.json();
+      const data = await checkFingerprintStatus();
       setDeviceStatus(data);
       setDeviceError(null);
     } catch (error: any) {
@@ -156,18 +146,11 @@ export function ConfiguracionSection({ userRol, onRefresh }: ConfiguracionSectio
     
     const poll = async () => {
       try {
-        const res = await fetch('/api/fingerprint/status');
+        const data = await checkFingerprintStatus();
         
         if (!cancelled) {
-          if (res.ok) {
-            const data = await res.json();
-            setDeviceStatus(data);
-            setDeviceError(null);
-          } else {
-            const error = await res.json();
-            setDeviceError(error.error || 'Servicio no disponible');
-            setDeviceStatus(null);
-          }
+          setDeviceStatus(data);
+          setDeviceError(null);
         }
       } catch (error: any) {
         if (!cancelled) {

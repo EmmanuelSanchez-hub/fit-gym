@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import type { AccesoResultado, Cliente, AuthUser } from "@/components/gym/types";
+import { captureFingerprint } from "@/lib/fingerprint-client";
 
 interface UseAccesosProps {
   user: AuthUser | null;
@@ -30,12 +31,7 @@ export function useAccesos({ user, onRefreshAccesos }: UseAccesosProps) {
         description: "Esperando captura de huella...",
       });
 
-      const captureRes = await fetch('/api/fingerprint/capture', {
-        method: "POST",
-      });
-      if (!captureRes.ok) throw new Error("Error al capturar huella");
-
-      const data = await captureRes.json();
+      const data = await captureFingerprint();
 
       if (data.success && data.template) {
         setHuellaAcceso(data.template);
