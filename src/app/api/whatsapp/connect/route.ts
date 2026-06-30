@@ -15,10 +15,12 @@ export async function POST(request: NextRequest) {
       status: 'connecting'
     });
   } catch (error) {
-    console.error('Error connecting to WhatsApp:', error);
+    const msg = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Error connecting to WhatsApp:', msg);
     return NextResponse.json({
       success: false,
-      error: 'Failed to start WhatsApp connection'
+      error: msg,
+      status: 'error'
     }, { status: 500 });
   }
 }

@@ -24,6 +24,7 @@ import {
   Phone,
   Play,
   Power,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -32,7 +33,7 @@ interface WhatsAppStatus {
   qrCode: string | null;
   phoneNumber: string | null;
   lastConnection: string | null;
-  status: 'disconnected' | 'connecting' | 'connected' | 'qr_ready' | 'service_unavailable';
+  status: 'disconnected' | 'connecting' | 'connected' | 'qr_ready' | 'service_unavailable' | 'error';
   error?: string;
 }
 
@@ -70,19 +71,22 @@ export function WhatsAppConnection({ onConnectionChange }: WhatsAppConnectionPro
     }
   }, [onConnectionChange]);
 
-  // Polling general cada 5s
+  // Polling inteligente: solo cuando realmente se necesita
   useEffect(() => {
-    const interval = setInterval(fetchStatus, 5000);
-    return () => clearInterval(interval);
-  }, [fetchStatus]);
-
-  // Polling rápido (500ms) mientras el diálogo QR esté abierto
-  useEffect(() => {
-    if (!showQRDialog) return;
+    // Solo hacer polling si está conectando o esperando QR (no en error/connected/disconnected)
+    const activePolling = status.status === 'connecting' || status.status === 'qr_ready';
+    const dialogOpen = showQRDialog;
     
-    const fastInterval = setInterval(fetchStatus, 500);
-    return () => clearInterval(fastInterval);
-  }, [showQRDialog, fetchStatus]);
+    if (!activePolling && !dialogOpen) return;
+    // Si hay error, no seguir polling aunque el diálogo esté abierto
+    if (status.status === 'error') return;
+
+    // Diálogo abierto: cada 3s. Solo conectando: cada 10s
+    const intervalMs = dialogOpen ? 3000 : 10000;
+    const interval = setInterval(fetchStatus, intervalMs);
+    
+    return () => clearInterval(interval);
+  }, [showQRDialog, fetchStatus, status.status]);
 
   // Connect to WhatsApp
   const handleConnect = async () => {
@@ -135,6 +139,8 @@ export function WhatsAppConnection({ onConnectionChange }: WhatsAppConnectionPro
         return <Badge className="bg-blue-500">QR Listo</Badge>;
       case 'service_unavailable':
         return <Badge variant="destructive">Servicio no disponible</Badge>;
+      case 'error':
+        return <Badge variant="destructive">Error</Badge>;
       default:
         return <Badge variant="secondary">Desconectado</Badge>;
     }
@@ -149,6 +155,7 @@ export function WhatsAppConnection({ onConnectionChange }: WhatsAppConnectionPro
       case 'qr_ready':
         return <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />;
       case 'service_unavailable':
+      case 'error':
         return <WifiOff className="w-5 h-5 text-red-500" />;
       default:
         return <WifiOff className="w-5 h-5 text-muted-foreground" />;
@@ -191,6 +198,17 @@ export function WhatsAppConnection({ onConnectionChange }: WhatsAppConnectionPro
                 <p className="text-sm text-muted-foreground">
                   El servicio de WhatsApp no está ejecutándose
                 </p>
+              ) : status.status === 'error' ? (
+                <div>
+                  <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                    Error de conexión
+                  </p>
+                  {status.error && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {status.error}
+                    </p>
+                  )}
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
                   No conectado
@@ -229,6 +247,15 @@ export function WhatsAppConnection({ onConnectionChange }: WhatsAppConnectionPro
               >
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Conectando...
+              </Button>
+            ) : status.status === 'error' ? (
+              <Button 
+                size="sm" 
+                className="flex-1 bg-amber-500 hover:bg-amber-600"
+                onClick={handleConnect}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Reintentar
               </Button>
             ) : (
               <Button 
@@ -294,6 +321,20 @@ export function WhatsAppConnection({ onConnectionChange }: WhatsAppConnectionPro
                   {status.phoneNumber && (
                     <p className="text-sm text-muted-foreground">
                       +{status.phoneNumber}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : status.status === 'error' ? (
+              <div className="flex flex-col items-center gap-3 p-8">
+                <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center">
+                  <AlertTriangle className="w-10 h-10 text-red-500" />
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold text-red-600">Error de conexión</p>
+                  {status.error && (
+                    <p className="text-sm text-muted-foreground mt-2 max-w-xs">
+                      {status.error}
                     </p>
                   )}
                 </div>
