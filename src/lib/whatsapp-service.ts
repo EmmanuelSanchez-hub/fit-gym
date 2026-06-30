@@ -50,8 +50,10 @@ export interface BulkRecipient {
 // ---------------------------------------------------------------------------
 // Configuración
 // ---------------------------------------------------------------------------
-const SESSION_DIR = join(process.cwd(), 'data', 'whatsapp', 'session');
-const STATE_FILE = join(process.cwd(), 'data', 'whatsapp', 'state.json');
+// En Vercel/serverless, solo /tmp tiene escritura. En local, usar data/
+const DATA_DIR = process.env.VERCEL ? '/tmp' : join(process.cwd(), 'data', 'whatsapp');
+const SESSION_DIR = join(DATA_DIR, 'session');
+const STATE_FILE = join(DATA_DIR, 'state.json');
 
 // Logger mínimo
 const logger = pino({ level: 'warn' });
