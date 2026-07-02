@@ -180,27 +180,27 @@ export function ConfiguracionSection({ userRol, onRefresh }: ConfiguracionSectio
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Settings className="w-6 h-6 text-emerald-500" />
-        <h2 className="text-xl font-semibold">Configuración y Reportes</h2>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-4 sm:space-y-6">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" />
+        <h2 className="text-lg sm:text-xl font-semibold">Configuración</h2>
       </div>
 
-      <Tabs defaultValue="exportar" className="space-y-4" onValueChange={(value) => {
+      <Tabs defaultValue="exportar" className="space-y-3 sm:space-y-4" onValueChange={(value) => {
         if (value === "dispositivos" && !deviceStatus && !isDeviceLoading) fetchDeviceStatus();
       }}>
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-          <TabsTrigger value="exportar" className="flex items-center justify-center gap-2 text-xs sm:text-sm">
-            <Download className="w-4 h-4 flex-shrink-0" /><span>Exportar</span>
+        <TabsList className="w-full flex bg-muted/50 p-1 rounded-lg gap-1">
+          <TabsTrigger value="exportar" className="flex-1 text-[10px] sm:text-sm px-1 sm:px-3 py-1.5 sm:py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md">
+            <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />Exportar
           </TabsTrigger>
-          <TabsTrigger value="importar" className="flex items-center justify-center gap-2 text-xs sm:text-sm">
-            <Upload className="w-4 h-4 flex-shrink-0" /><span>Importar</span>
+          <TabsTrigger value="importar" className="flex-1 text-[10px] sm:text-sm px-1 sm:px-3 py-1.5 sm:py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md">
+            <Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />Importar
           </TabsTrigger>
-          <TabsTrigger value="reportes" className="flex items-center justify-center gap-2 text-xs sm:text-sm">
-            <BarChart3 className="w-4 h-4 flex-shrink-0" /><span>Reportes</span>
+          <TabsTrigger value="reportes" className="flex-1 text-[10px] sm:text-sm px-1 sm:px-3 py-1.5 sm:py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md">
+            <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />Reportes
           </TabsTrigger>
-          <TabsTrigger value="dispositivos" className="flex items-center justify-center gap-2 text-xs sm:text-sm">
-            <Fingerprint className="w-4 h-4 flex-shrink-0" /><span>Dispositivos</span>
+          <TabsTrigger value="dispositivos" className="flex-1 text-[10px] sm:text-sm px-1 sm:px-3 py-1.5 sm:py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md">
+            <Fingerprint className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />Disp.
           </TabsTrigger>
         </TabsList>
 
