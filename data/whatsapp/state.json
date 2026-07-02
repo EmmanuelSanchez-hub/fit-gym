@@ -1,8 +1,0 @@
-{
-  "connected": false,
-  "qrCode": null,
-  "phoneNumber": null,
-  "lastConnection": null,
-  "status": "error",
-  "error": "Sesión cerrada. Vuelve a escanear el QR."
-}

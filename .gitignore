@@ -66,3 +66,9 @@ mini-services/fingerprint-windows-app/bin/
 mini-services/fingerprint-windows-app/obj/
 *.exe
 FitGymFingerprint*
+
+# WhatsApp local session data
+data/whatsapp/
+
+# SQLite databases
+prisma/db/
