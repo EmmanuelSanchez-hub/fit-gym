@@ -60,7 +60,7 @@ export async function PUT(
   }
 }
 
-// DELETE - Eliminar (desactivar) clase
+// DELETE - Eliminar (desactivar) clase y cancelar sus reservas activas
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -68,13 +68,29 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Soft delete
+    // Cancelar todas las reservas confirmadas de esta clase (hoy en adelante)
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const reservasCanceladas = await db.reserva.updateMany({
+      where: {
+        claseId: id,
+        estado: 'confirmada',
+        fecha: { gte: hoy },
+      },
+      data: { estado: 'cancelada' },
+    });
+
+    // Soft delete de la clase
     const clase = await db.clase.update({
       where: { id },
       data: { activo: false },
     });
 
-    return NextResponse.json({ success: true, message: 'Clase desactivada' });
+    return NextResponse.json({
+      success: true,
+      message: 'Clase desactivada',
+      reservasCanceladas: reservasCanceladas.count,
+    });
   } catch (error) {
     console.error('Error deleting clase:', error);
     return NextResponse.json({ error: 'Error al eliminar clase' }, { status: 500 });
