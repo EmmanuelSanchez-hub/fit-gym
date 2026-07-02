@@ -22,17 +22,17 @@ export function StatsCards({ totalClientes, clientesNuevos, membresiasActivas, m
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="stats-cards">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4" id="stats-cards">
       {cards.map((c) => (
-        <Card key={c.title} className={`bg-gradient-to-br from-${c.color}-500/10 to-${c.color}-600/5 border-${c.color}-500/20`}>
-          <CardHeader className="pb-2">
-            <CardDescription className={`flex items-center gap-2 text-${c.color}-600`}>
-              <c.icon className="w-4 h-4" />{c.title}
+        <Card key={c.title} className={`bg-gradient-to-br from-${c.color}-500/10 to-${c.color}-600/5 border-${c.color}-500/20 overflow-hidden`}>
+          <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6">
+            <CardDescription className={`flex items-center gap-1 sm:gap-2 text-${c.color}-600 text-xs sm:text-sm`}>
+              <c.icon className="w-3 h-3 sm:w-4 sm:h-4" />{c.title}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className={`text-3xl font-bold text-${c.color}-600`}>{c.value}</div>
-            <p className="text-sm text-muted-foreground">{c.sub}</p>
+          <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+            <div className={`text-xl sm:text-2xl lg:text-3xl font-bold text-${c.color}-600 truncate`}>{c.value}</div>
+            <p className="text-[10px] sm:text-sm text-muted-foreground truncate">{c.sub}</p>
           </CardContent>
         </Card>
       ))}

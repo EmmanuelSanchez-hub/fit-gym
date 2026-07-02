@@ -25,16 +25,16 @@ export function RiskMetrics({ tasaRetencion, clientesEnRiesgo, membresiasActivas
             Tasa de Retención (60 días)
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-baseline gap-2">
-            <span className={`text-3xl font-bold text-${retencionColor}-600`}>{tasaRetencion}%</span>
-            <span className="text-sm text-muted-foreground">de clientes renuevan</span>
-          </div>
-          <Progress value={tasaRetencion} className={`h-2 [&>div]:bg-${retencionColor}-500`} />
-          {tasaRetencion < 70 && (
-            <p className="text-xs text-amber-600">⚠️ Por debajo del objetivo (70%). Revisar estrategia de fidelización.</p>
-          )}
-        </CardContent>
+          <CardContent className="space-y-2 sm:space-y-3">
+            <div className="flex items-baseline gap-1 sm:gap-2">
+              <span className={`text-2xl sm:text-3xl font-bold text-${retencionColor}-600`}>{tasaRetencion}%</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">de clientes renuevan</span>
+            </div>
+            <Progress value={tasaRetencion} className={`h-2 [&>div]:bg-${retencionColor}-500`} />
+            {tasaRetencion < 70 && (
+              <p className="text-[10px] sm:text-xs text-amber-600">⚠️ Por debajo del objetivo (70%). Revisar estrategia de fidelización.</p>
+            )}
+          </CardContent>
       </Card>
 
       {/* Clientes en Riesgo */}
@@ -45,16 +45,16 @@ export function RiskMetrics({ tasaRetencion, clientesEnRiesgo, membresiasActivas
             Clientes en Riesgo (15+ días sin ir)
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-baseline gap-2">
-            <span className={`text-3xl font-bold text-${riesgoColor}-600`}>{clientesEnRiesgo}</span>
-            <span className="text-sm text-muted-foreground">de {membresiasActivas} ({riesgoPct}%)</span>
-          </div>
-          <Progress value={Math.min(riesgoPct * 2, 100)} className={`h-2 [&>div]:bg-${riesgoColor}-500`} />
-          {riesgoPct > 20 && (
-            <p className="text-xs text-red-600">⚠️ Más del 20% en riesgo. Activar campaña de reactivación.</p>
-          )}
-        </CardContent>
+          <CardContent className="space-y-2 sm:space-y-3">
+            <div className="flex items-baseline gap-1 sm:gap-2">
+              <span className={`text-2xl sm:text-3xl font-bold text-${riesgoColor}-600`}>{clientesEnRiesgo}</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">de {membresiasActivas} ({riesgoPct}%)</span>
+            </div>
+            <Progress value={Math.min(riesgoPct * 2, 100)} className={`h-2 [&>div]:bg-${riesgoColor}-500`} />
+            {riesgoPct > 20 && (
+              <p className="text-[10px] sm:text-xs text-red-600">⚠️ Más del 20% en riesgo. Activar campaña de reactivación.</p>
+            )}
+          </CardContent>
       </Card>
     </div>
   );

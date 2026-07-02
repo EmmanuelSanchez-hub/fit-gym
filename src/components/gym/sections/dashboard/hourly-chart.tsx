@@ -19,8 +19,8 @@ export function HourlyChart({ accesosPorHora }: HourlyChartProps) {
         </CardTitle>
         <CardDescription>Distribución horaria de accesos para identificar horas pico</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="h-64">
+        <CardContent className="px-2 sm:px-6">
+          <div className="h-40 sm:h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={accesosPorHora}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />

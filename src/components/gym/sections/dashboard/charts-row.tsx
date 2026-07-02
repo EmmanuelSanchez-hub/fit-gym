@@ -12,17 +12,17 @@ interface ChartsRowProps {
 
 export function ChartsRow({ accesosPorDia, membresiasConCount, userRol }: ChartsRowProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       <Card id="access-chart">
-        <CardHeader>
-          <CardTitle>Accesos de la Semana</CardTitle>
-          <CardDescription>
+        <CardHeader className="pb-2 sm:pb-6">
+          <CardTitle className="text-sm sm:text-lg">Accesos de la Semana</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
             {userRol === "SUPER_USUARIO" || userRol === "ADMINISTRADOR"
               ? "Todos los accesos del gimnasio" : "Accesos validados por ti"}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="h-64">
+        <CardContent className="px-2 sm:px-6">
+          <div className="h-48 sm:h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={accesosPorDia}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -37,12 +37,12 @@ export function ChartsRow({ accesosPorDia, membresiasConCount, userRol }: Charts
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Distribución de Membresías</CardTitle>
-          <CardDescription>Clientes por tipo de plan</CardDescription>
+        <CardHeader className="pb-2 sm:pb-6">
+          <CardTitle className="text-sm sm:text-lg">Distribución de Membresías</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Clientes por tipo de plan</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="h-64">
+        <CardContent className="px-2 sm:px-6">
+          <div className="h-48 sm:h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={membresiasConCount} dataKey="count" nameKey="nombre" cx="50%" cy="50%" outerRadius={80} label={({ nombre, count }) => `${nombre}: ${count}`}>
