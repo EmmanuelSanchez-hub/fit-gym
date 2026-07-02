@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Clock, Users, AlertTriangle, X } from "lucide-react";
 import type { Clase, Reserva } from "../../types";
 
-const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const HORA_INICIO_CALENDARIO = 5;
 const HORA_FIN_CALENDARIO = 22;
 const TOTAL_HORAS = HORA_FIN_CALENDARIO - HORA_INICIO_CALENDARIO + 1;
@@ -97,73 +97,74 @@ export function ClassesCalendar({ clases, reservas, selectedDate, onReservar, on
 
   return (
     <Card id="clases-section">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Clock className="w-5 h-5 text-emerald-500" />
+      <CardHeader className="pb-2 sm:pb-3">
+        <CardTitle className="text-sm sm:text-lg flex items-center gap-1.5 sm:gap-2">
+          <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" />
           Clases Disponibles
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-[10px] sm:text-sm">
           Horario semanal · {clasesEnCuadricula.size} en cuadrícula
           {clasesFueraRango.length > 0 && ` · ${clasesFueraRango.length} fuera de rango`}
         </CardDescription>
       </CardHeader>
-      <CardContent className="overflow-x-auto px-3 pb-3">
-        <div className="min-w-[900px]">
+      <CardContent className="overflow-x-auto px-1 sm:px-3 pb-2 sm:pb-3">
+        <div className="min-w-[310px] max-w-full">
           {/* Cabecera de días */}
-          <div className="grid grid-cols-8 gap-0.5 mb-0.5">
-            <div className="py-1 text-[10px] font-medium text-muted-foreground text-center">Hora</div>
+          <div className="flex gap-px mb-px">
+            <div className="text-[9px] sm:text-xs font-medium text-muted-foreground text-center leading-none py-1 sm:py-1.5 w-11 sm:w-14">Hora</div>
             {DIAS.map(dia => (
-              <div key={dia} className="py-1 text-[10px] font-semibold text-center bg-muted/50 rounded-t">
-                {dia.slice(0, 3)}
+              <div key={dia} className="text-[9px] sm:text-xs font-semibold text-center bg-muted/50 rounded-t py-1 sm:py-1.5 leading-none flex-1">
+                {dia.slice(0, 1)}
               </div>
             ))}
           </div>
 
           {/* Filas de horarios */}
           {HORAS.map(hora => (
-            <div key={hora} className="grid grid-cols-8 gap-0.5">
-              <div className="py-1 text-[10px] text-muted-foreground text-right pr-2 font-medium border-r border-border/20">
+            <div key={hora} className="flex gap-px">
+              <div className="text-[10px] sm:text-sm text-muted-foreground text-right pr-1 sm:pr-2 font-medium border-r border-border/20 leading-none py-1.5 sm:py-2 w-11 sm:w-14 flex items-center justify-end shrink-0">
                 {hora}
               </div>
               {DIAS.map(dia => {
                 const clase = getClaseEnSlot(dia, hora);
                 const first = isFirstRow(dia, hora);
                 if (!clase) {
-                  return <div key={`${dia}-${hora}`} className="rounded min-h-[28px] border border-transparent bg-muted/10" />;
+                  return <div key={`${dia}-${hora}`} className="flex-1 rounded-sm min-h-[36px] sm:min-h-[44px] border border-transparent bg-muted/10" />;
                 }
                 if (!first) {
-                  return <div key={`${dia}-${hora}`} className="rounded border border-emerald-500/20 bg-emerald-500/5" />;
+                  return <div key={`${dia}-${hora}`} className="flex-1 rounded-sm min-h-[36px] sm:min-h-[44px] border border-emerald-500/20 bg-emerald-500/5" />;
                 }
                 return (
                   <div
                     key={`${dia}-${hora}`}
-                    className="relative rounded border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors cursor-pointer min-h-[28px] group"
+                    className="flex-1 relative rounded-sm border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors cursor-pointer min-h-[36px] sm:min-h-[44px] group"
                     onClick={() => onEditClase(clase)}
-                    title="Clic para editar clase"
                   >
-                    <div className="flex items-center justify-between h-full px-1 py-0.5">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 truncate leading-tight">
-                          {clase.nombre}
-                        </p>
-                        <p className="text-[9px] text-muted-foreground leading-tight">
-                          {clase.horaInicio} - {clase.horaFin}{clase.instructor ? ` · ${clase.instructor}` : ""}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        <Badge variant="outline" className="text-[9px] h-3.5 px-1 py-0">
-                          <Users className="w-2 h-2 mr-0.5" />
-                          {getReservasCount(clase.id)}/{clase.capacidad}
-                        </Badge>
-                        {onDeleteClase && (
-                          <button
-                            className="opacity-0 group-hover:opacity-100 p-0.5 text-red-500 hover:bg-red-500/10 rounded transition-opacity"
-                            onClick={(e) => { e.stopPropagation(); onDeleteClase(clase); }}
-                            title="Eliminar clase"
-                          >
-                            <X className="w-2.5 h-2.5" />
-                          </button>
-                        )}
+                    {/* Solo nombre visible */}
+                    <div className="flex items-center h-full px-0.5 sm:px-2">
+                      <p className="text-[8px] sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300 truncate leading-tight flex-1 text-center">
+                        {clase.nombre}
+                      </p>
+                    </div>
+
+                    {/* Tooltip flotante al hover */}
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-0.5 hidden group-hover:block z-50 pointer-events-none">
+                      <div className="bg-card border shadow-lg rounded-md p-1.5 w-40 text-left">
+                        <p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 mb-0.5">{clase.nombre}</p>
+                        <div className="space-y-0.5 text-[9px] text-muted-foreground">
+                          <p className="flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5 shrink-0" />
+                            {clase.horaInicio} - {clase.horaFin}
+                          </p>
+                          {clase.instructor && <p>👤 {clase.instructor}</p>}
+                          <p className="flex items-center gap-1">
+                            <Users className="w-2.5 h-2.5 shrink-0" />
+                            {getReservasCount(clase.id)}/{clase.capacidad} reservas
+                          </p>
+                        </div>
+                        <div className="mt-1 flex gap-1">
+                          <span className="text-[8px] bg-emerald-500/20 text-emerald-700 px-1 py-0.5 rounded">Clic para editar</span>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -138,17 +138,16 @@ export function ReservasSection({ reservas, clases, clientes, user, onRefresh }:
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold flex items-center gap-2"><CalendarDays className="w-5 h-5" />Reservas</h2>
-          <p className="text-muted-foreground text-sm">Gestiona las reservas de clases</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Gestiona las reservas de clases</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Input type="date" value={selectedDate} onChange={(e) => { setSelectedDate(e.target.value); fetchReservas(e.target.value); }} className="w-40" />
-          <Button variant="outline" onClick={openCreateClase}><Plus className="w-4 h-4 mr-2" />Clase</Button>
-          <Button className="bg-emerald-500 hover:bg-emerald-600" onClick={() => { setBusquedaHuella(""); setClienteEncontrado(null); setReservaForm({ clienteId: "", claseId: "", fecha: new Date().toISOString().split("T")[0], notas: "" }); setShowReservaDialog(true); }}>
-            <Plus className="w-4 h-4 mr-2" />Reserva
+        <div className="flex gap-1.5 sm:gap-2 w-full sm:w-auto">
+          <Input type="date" value={selectedDate} onChange={(e) => { setSelectedDate(e.target.value); fetchReservas(e.target.value); }} className="w-28 sm:w-40 h-8 sm:h-9 text-[10px] sm:text-sm flex-shrink-1" />
+          <Button variant="outline" size="sm" onClick={openCreateClase} className="h-8 sm:h-9 text-[10px] sm:text-sm px-2 sm:px-3"><Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />Clase</Button>
+          <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 h-8 sm:h-9 text-[10px] sm:text-sm px-2 sm:px-3" onClick={() => { setBusquedaHuella(""); setClienteEncontrado(null); setReservaForm({ clienteId: "", claseId: "", fecha: new Date().toISOString().split("T")[0], notas: "" }); setShowReservaDialog(true); }}>
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />Reserva
           </Button>
         </div>
       </div>
