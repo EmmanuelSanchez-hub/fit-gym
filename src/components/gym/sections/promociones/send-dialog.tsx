@@ -78,6 +78,7 @@ export function SendDialog({ open, promo, clientes, whatsappConnected, sending, 
   // Auto-select the pre-selected client when dialog opens
   useEffect(() => {
     if (open && preSelectedClienteId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reinicializar selección al abrir con cliente pre-seleccionado
       setSelectedClientes(new Set([preSelectedClienteId]));
     }
   }, [open, preSelectedClienteId]);
