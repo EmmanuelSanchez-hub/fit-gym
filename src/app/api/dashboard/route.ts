@@ -45,6 +45,11 @@ const hace30DiasTimestamp = fechaHace30Dias.getTime();
     
     const en7Dias = new Date();
     en7Dias.setDate(hoy.getDate() + 7);
+    const hace15Dias = new Date(hoy);
+    hace15Dias.setDate(hace15Dias.getDate() - 15);
+    const hace60Dias = new Date(hoy);
+    hace60Dias.setDate(hace60Dias.getDate() - 60);
+    
     const membresiasPorVencer = await db.membresiaCliente.count({
       where: {
         estado: 'activa',
@@ -58,6 +63,57 @@ const hace30DiasTimestamp = fechaHace30Dias.getTime();
         fechaFin: { lt: hoy },
       },
     });
+
+    // Tasa de retención: de los clientes con membresía vencida en 60 días, ¿cuántos renovaron?
+    const membresiasVencidasEnPeriodo = await db.membresiaCliente.count({
+      where: { fechaFin: { gte: hace60Dias, lt: hoy } },
+    });
+    // IDs de clientes que tuvieron una membresía vencida en el período
+    const clientesConVencidas = await db.membresiaCliente.findMany({
+      where: { fechaFin: { gte: hace60Dias, lt: hoy } },
+      select: { clienteId: true },
+      distinct: ['clienteId'],
+    });
+    const idsVencidos = clientesConVencidas.map(m => m.clienteId);
+    // De esos clientes, cuántos iniciaron una nueva membresía en los últimos 60 días
+    const membresiasRenovadasEnPeriodo = idsVencidos.length > 0
+      ? await db.membresiaCliente.count({
+          where: { clienteId: { in: idsVencidos }, fechaInicio: { gte: hace60Dias } },
+        })
+      : 0;
+    const tasaRetencion = membresiasVencidasEnPeriodo > 0
+      ? Math.min(100, Math.round((membresiasRenovadasEnPeriodo / membresiasVencidasEnPeriodo) * 100))
+      : 100;
+
+    // Clientes en riesgo: activos que no han tenido acceso en 15+ días
+    const clientesConAccesoReciente = await db.acceso.findMany({
+      where: { fechaHora: { gte: hace15Dias }, exitoso: true },
+      select: { clienteId: true },
+      distinct: ['clienteId'],
+    });
+    const idsConAccesoReciente = clientesConAccesoReciente.map(a => a.clienteId);
+    const clientesEnRiesgo = await db.cliente.count({
+      where: { activo: true, id: { notIn: idsConAccesoReciente } },
+      // Solo contar los que tienen membresía activa
+    });
+    // Refinamos: clientes en riesgo = con membresía activa que no han ido en 15 días
+    const membresiasActivasIds = await db.membresiaCliente.findMany({
+      where: { estado: 'activa', fechaFin: { gte: hoy } },
+      select: { clienteId: true },
+      distinct: ['clienteId'],
+    });
+    const idsMembresiaActiva = membresiasActivasIds.map(m => m.clienteId);
+    const clientesEnRiesgoReal = idsMembresiaActiva.filter(id => !idsConAccesoReciente.includes(id)).length;
+
+    // Accesos por hora del día (hoy)
+    const accesosDelDia = await db.acceso.findMany({
+      where: { fechaHora: { gte: hoy }, exitoso: true },
+      select: { fechaHora: true },
+    });
+    const accesosPorHora = Array.from({ length: 24 }, (_, hora) => ({
+      hora: `${hora}:00`,
+      accesos: accesosDelDia.filter(a => new Date(a.fechaHora).getHours() === hora).length,
+    }));
     
     // Accesos de hoy (filtrados por rol)
     const accesosHoyWhere: { fechaHora: { gte: Date }; exitoso: boolean; empleadoId?: string } = {
@@ -80,8 +136,9 @@ const hace30DiasTimestamp = fechaHace30Dias.getTime();
     // Métricas por empleado (admin/superusuario ven todos)
     let empleados;
     if (esAdminO_superUsuario) {
+      // Excluir al super usuario de las métricas por empleado
       empleados = await db.empleado.findMany({
-        where: { activo: true },
+        where: { activo: true, email: { not: 'super@gym.com' } },
         include: {
           _count: {
             select: {
@@ -143,7 +200,7 @@ const hace30DiasTimestamp = fechaHace30Dias.getTime();
     }
     
     // Accesos por día (últimos 7 días) - filtrado por rol
-    const accesosPorDia = [];
+    const accesosPorDia: { fecha: string; dia: string; accesos: number }[] = [];
     for (let i = 6; i >= 0; i--) {
       const fecha = new Date(hoy);
       fecha.setDate(fecha.getDate() - i);
@@ -273,7 +330,10 @@ const hace30DiasTimestamp = fechaHace30Dias.getTime();
         accesosHoy,
         reservasHoy,
         ingresosMes,
+        tasaRetencion,
+        clientesEnRiesgo: clientesEnRiesgoReal,
       },
+      accesosPorHora,
       empleados: empleadosConClientesRecientes,
       accesosPorDia,
       membresiasConCount,
