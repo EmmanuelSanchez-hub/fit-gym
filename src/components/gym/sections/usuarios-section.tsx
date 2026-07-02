@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, Shield, UsersRound } from "lucide-react";
+import { Search, Plus, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { SystemUser, AuthUser } from "../types";
 import { UserTable } from "./usuarios/user-table";
@@ -43,7 +43,10 @@ export function UsuariosSection({ user }: UsuariosSectionProps) {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchUsers(); }, [canManageUsers]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching en useEffect es el patrón estándar de React
+    fetchUsers();
+  }, [canManageUsers]);
 
   // ──── CRUD ────
   const resetForm = () => setForm({ email: "", password: "", rol: "RECEPCIONISTA", empleadoId: "", activo: true, crearEmpleado: false, empleadoNombre: "", empleadoTelefono: "" });
@@ -115,21 +118,15 @@ export function UsuariosSection({ user }: UsuariosSectionProps) {
 
   // ──── Render ────
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <UsersRound className="w-5 h-5" />Gestión de Usuarios
-          </h2>
-          <p className="text-muted-foreground text-sm">Administra los usuarios del sistema</p>
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Buscar..." className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center justify-end">
+        <div className="flex gap-1.5 sm:gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-48">
+            <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+            <Input placeholder="Buscar..." className="pl-7 sm:pl-10 h-8 sm:h-9 text-xs sm:text-sm" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
-          <Button className="bg-emerald-500 hover:bg-emerald-600" onClick={openCreate} id="new-user-btn">
-            <Plus className="w-4 h-4 mr-2" />Nuevo Usuario
+          <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 h-8 sm:h-9 text-xs sm:text-sm" onClick={openCreate} id="new-user-btn">
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />Nuevo Usuario
           </Button>
         </div>
       </div>
