@@ -1,0 +1,8 @@
+# Railway/Nixpacks configuration for WhatsApp Service
+# Instala dependencias del sistema necesarias para Baileys
+
+[phases.setup]
+nixPkgs = ["python3", "gcc", "gnumake"]
+
+[start]
+cmd = "node server.js"

@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   const authResult = await requireAuth(request, 'whatsapp:connect');
   if ('error' in authResult) return authResult.error;
   
-  const state = getState();
+  const state = await getState();
   if (state.connected) {
     return NextResponse.json({ message: 'Already connected', status: 'connected' });
   }
