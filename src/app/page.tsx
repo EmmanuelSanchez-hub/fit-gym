@@ -30,6 +30,7 @@ import { useClientes } from "@/hooks/use-clientes";
 import { useAccesos } from "@/hooks/use-accesos";
 import { useTour } from "@/hooks/use-tour";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "@/hooks/use-toast";
 
 // Types
 import type { Cliente, ClienteForm, MembresiaForm, Reserva } from "@/components/gym/types";
@@ -131,6 +132,12 @@ export default function GymApp() {
   // Reservas state
   const [reservas, setReservas] = useState<Reserva[]>([]);
 
+  // Promoción activation from dashboard
+  const [promoActivation, setPromoActivation] = useState<{
+    clienteId: string;
+    tipo: "membresia_expirada" | "vencimiento_proximo";
+  } | null>(null);
+
   // Fetch reservas on section change
   const fetchReservas = async () => {
     try {
@@ -219,13 +226,13 @@ export default function GymApp() {
         body: JSON.stringify(membresiaForm),
       });
       if (res.ok) {
-        alert("Membresía asignada exitosamente");
+        toast({ title: "Membresía asignada exitosamente" });
         setShowMembresiaDialog(false);
         setMembresiaForm({ clienteId: "", membresiaId: "", metodoPago: "Efectivo", fechaInicio: new Date().toISOString().split('T')[0] });
         fetchData();
       }
     } catch {
-      alert("Error al asignar membresía");
+      toast({ title: "Error al asignar membresía", variant: "destructive" });
     }
   };
 
@@ -255,14 +262,14 @@ export default function GymApp() {
       }
 
       if (res.ok) {
-        alert(selectedPlan ? "Plan actualizado" : "Plan creado");
+        toast({ title: selectedPlan ? "Plan actualizado" : "Plan creado" });
         setShowPlanDialog(false);
         setSelectedPlan(null);
         setPlanForm({ nombre: "", descripcion: "", precio: "", duracionDias: "30" });
         fetchData();
       }
     } catch {
-      alert("Error al guardar el plan");
+      toast({ title: "Error al guardar el plan", variant: "destructive" });
     }
   };
 
@@ -272,11 +279,11 @@ export default function GymApp() {
     try {
       const res = await fetch(`/api/membresias/${id}`, { method: "DELETE" });
       if (res.ok) {
-        alert("Plan eliminado");
+        toast({ title: "Plan eliminado" });
         fetchData();
       }
     } catch {
-      alert("Error al eliminar el plan");
+      toast({ title: "Error al eliminar el plan", variant: "destructive" });
     }
   };
 
@@ -310,6 +317,13 @@ export default function GymApp() {
   const handleRenovarMembresia = () => {
     setShowResultadoDialog(false);
     setActiveSection("membresias");
+  };
+
+  // Handle send promotion from dashboard alerts
+  const handleSendPromotionFromDashboard = (clienteId: string, tipoAlerta: "vencer" | "expirado") => {
+    const tipo = tipoAlerta === "vencer" ? "vencimiento_proximo" : "membresia_expirada";
+    setPromoActivation({ clienteId, tipo });
+    setActiveSection("promociones");
   };
 
   // Show loading while checking auth
@@ -371,7 +385,7 @@ export default function GymApp() {
           <AnimatePresence mode="wait">
             {/* Dashboard Section */}
             {activeSection === "dashboard" && dashboardData && (
-              <DashboardSection data={dashboardData} userRol={user.rol} />
+              <DashboardSection data={dashboardData} userRol={user.rol} onSendPromotion={handleSendPromotionFromDashboard} />
             )}
 
             {/* Clientes Section */}
@@ -420,6 +434,7 @@ export default function GymApp() {
                 clases={clases}
                 clientes={clientes}
                 user={user}
+                onRefresh={fetchData}
               />
             )}
 
@@ -447,6 +462,8 @@ export default function GymApp() {
                 clientes={clientes}
                 user={user}
                 onRefresh={fetchData}
+                activation={promoActivation}
+                onActivationHandled={() => setPromoActivation(null)}
               />
             )}
 
