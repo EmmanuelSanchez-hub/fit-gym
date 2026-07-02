@@ -41,12 +41,18 @@ export async function getState(): Promise<WhatsAppState> {
 }
 
 export async function startWhatsApp(forceNewQR: boolean = true): Promise<void> {
+  const body = JSON.stringify({ forceNewQR });
+  console.log('[WhatsApp Proxy] Conectando a:', `${SERVICE_URL}/connect`);
   const res = await fetch(`${SERVICE_URL}/connect`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ forceNewQR }),
+    body,
   });
-  if (!res.ok) throw new Error('Failed to start WhatsApp');
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error('[WhatsApp Proxy] Error:', res.status, errText);
+    throw new Error(`Failed to start WhatsApp: ${res.status} ${errText}`);
+  }
 }
 
 export async function disconnectWhatsApp(): Promise<void> {
