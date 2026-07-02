@@ -6,27 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Smartphone,
   QrCode,
-  CheckCircle,
   XCircle,
   Loader2,
   RefreshCw,
   WifiOff,
   Wifi,
   Phone,
-  Play,
-  Power,
-  AlertTriangle,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { QrDialog } from "./qr-dialog";
 
 interface WhatsAppStatus {
   connected: boolean;
@@ -71,18 +61,16 @@ export function WhatsAppConnection({ onConnectionChange }: WhatsAppConnectionPro
     }
   }, [onConnectionChange]);
 
-  // Polling inteligente: solo cuando realmente se necesita
-  useEffect(() => {
-    // Solo hacer polling si está conectando o esperando QR (no en error/connected/disconnected)
-    const activePolling = status.status === 'connecting' || status.status === 'qr_ready';
-    const dialogOpen = showQRDialog;
-    
-    if (!activePolling && !dialogOpen) return;
-    // Si hay error, no seguir polling aunque el diálogo esté abierto
-    if (status.status === 'error') return;
+  // Initial fetch on mount
+  useEffect(() => { fetchStatus(); }, []);
 
-    // Diálogo abierto: cada 3s. Solo conectando: cada 10s
-    const intervalMs = dialogOpen ? 3000 : 10000;
+  // Polling: siempre activo, rápido cuando está conectando o diálogo abierto
+  useEffect(() => {
+    const dialogOpen = showQRDialog;
+    const needsFastPolling = status.status === 'connecting' || status.status === 'qr_ready' || dialogOpen;
+    
+    // Siempre hacer polling, rápido si está conectando o diálogo abierto
+    const intervalMs = needsFastPolling ? 2000 : 10000;
     const interval = setInterval(fetchStatus, intervalMs);
     
     return () => clearInterval(interval);
@@ -276,91 +264,17 @@ export function WhatsAppConnection({ onConnectionChange }: WhatsAppConnectionPro
         </CardContent>
       </Card>
 
-      {/* QR Code Dialog */}
-      <Dialog open={showQRDialog} onOpenChange={(open) => {
-        if (!open && status.status === 'connecting') {
-          // Si cierra el diálogo sin conectarse, cancelar la conexión
-          handleDisconnect();
-        }
-        setShowQRDialog(open);
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Smartphone className="w-5 h-5 text-green-500" />
-              Conectar WhatsApp
-            </DialogTitle>
-            <DialogDescription>
-              Escanea este código QR con WhatsApp en tu teléfono
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex flex-col items-center py-4">
-            {status.qrCode ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="relative"
-              >
-                <img 
-                  src={status.qrCode} 
-                  alt="WhatsApp QR Code" 
-                  className="w-64 h-64 rounded-lg border shadow-lg"
-                />
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
-                  {getStatusBadge()}
-                </div>
-              </motion.div>
-            ) : status.connected ? (
-              <div className="flex flex-col items-center gap-3 p-8">
-                <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <CheckCircle className="w-10 h-10 text-emerald-500" />
-                </div>
-                <div className="text-center">
-                  <p className="font-semibold text-emerald-600">¡Conectado!</p>
-                  {status.phoneNumber && (
-                    <p className="text-sm text-muted-foreground">
-                      +{status.phoneNumber}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ) : status.status === 'error' ? (
-              <div className="flex flex-col items-center gap-3 p-8">
-                <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center">
-                  <AlertTriangle className="w-10 h-10 text-red-500" />
-                </div>
-                <div className="text-center">
-                  <p className="font-semibold text-red-600">Error de conexión</p>
-                  {status.error && (
-                    <p className="text-sm text-muted-foreground mt-2 max-w-xs">
-                      {status.error}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-3 p-8">
-                <Loader2 className="w-10 h-10 text-muted-foreground animate-spin" />
-                <p className="text-sm text-muted-foreground">
-                  Generando código QR...
-                </p>
-              </div>
-            )}
-
-            {/* Instructions */}
-            <div className="mt-6 p-4 bg-muted/50 rounded-lg text-sm space-y-2">
-              <p className="font-medium">Instrucciones:</p>
-              <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                <li>Abre WhatsApp en tu teléfono</li>
-                <li>Ve a Configuración → Dispositivos vinculados</li>
-                <li>Toca "Vincular un dispositivo"</li>
-                <li>Escanea el código QR</li>
-              </ol>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* QR Code Dialog - cerrar NO desconecta, solo oculta el diálogo */}
+      <QrDialog
+        open={showQRDialog}
+        status={status}
+        onOpenChange={(open) => {
+          // Si el diálogo se cierra mientras está conectando, desconectar para limpiar
+          if (!open && !status.connected) handleDisconnect();
+          setShowQRDialog(open);
+        }}
+        onDisconnect={handleDisconnect}
+      />
     </>
   );
 }
