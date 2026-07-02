@@ -123,31 +123,26 @@ export interface DashboardData {
     accesosHoy: number;
     reservasHoy: number;
     ingresosMes: number;
+    tasaRetencion: number;
+    clientesEnRiesgo: number;
   };
   empleados: Empleado[];
   accesosPorDia: { fecha: string; dia: string; accesos: number }[];
+  accesosPorHora: { hora: string; accesos: number }[];
   membresiasConCount: (Membresia & { count: number })[];
   clientesPorVencer: {
     id: string;
     fechaFin: string;
     cliente: { id: string; nombre: string; apellido: string; telefono: string; email: string };
     membresia: { nombre: string };
-    contactoReciente?: {
-      fecha: string;
-      estado: string;
-      haceDias: number;
-    } | null;
+    contactoReciente?: { fecha: string; estado: string; haceDias: number } | null;
   }[];
   clientesExpirados: {
     id: string;
     fechaFin: string;
     cliente: { id: string; nombre: string; apellido: string; telefono: string; email: string };
     membresia: { nombre: string };
-    contactoReciente?: {
-      fecha: string;
-      estado: string;
-      haceDias: number;
-    } | null;
+    contactoReciente?: { fecha: string; estado: string; haceDias: number } | null;
   }[];
   esAdmin?: boolean;
 }

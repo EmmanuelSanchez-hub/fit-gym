@@ -67,61 +67,12 @@ export function ClienteDialog({
     }
   }, []);
 
-  // Check device status when dialog opens
+  // Verificar estado del dispositivo UNA SOLA VEZ al abrir el diálogo
   useEffect(() => {
     if (open) {
-      const timeoutId = setTimeout(() => {
-        checkDeviceStatus();
-      }, 0);
-      return () => clearTimeout(timeoutId);
+      checkDeviceStatus();
     }
   }, [open, checkDeviceStatus]);
-
-  // Polling automático para capturar huella cuando el dialog está abierto
-  useEffect(() => {
-    if (!open || isEditing) return; // No capturar automáticamente al editar
-    
-    let cancelled = false;
-    let isProcessing = false;
-    
-    const poll = async () => {
-      if (cancelled || isProcessing) return;
-      
-      try {
-        // Verificar si el servicio está activo directamente desde el navegador
-        const status = await checkFingerprintStatus();
-        if (!status.connected || !status.sensorReady) return;
-        
-        // Intentar capturar huella automáticamente
-        isProcessing = true;
-        const captureData = await captureFingerprint();
-        isProcessing = false;
-        
-        if (!captureData.success) return;
-        
-        if (captureData.success && captureData.template && !cancelled && !fingerprintCaptured) {
-          // Huella capturada automáticamente
-          onFormChange({ ...form, huellaBiometrica: captureData.template ?? "" });
-          setFingerprintCaptured(true);
-          toast({
-            title: "Huella capturada",
-            description: `Calidad: ${captureData.quality}%`,
-          });
-        }
-      } catch {
-        // Silenciar errores de polling
-      }
-    };
-    
-    // Polling cada 800ms mientras el dialog esté abierto
-    const interval = setInterval(poll, 800);
-    poll(); // Primera captura inmediata
-    
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [open, isEditing, form, onFormChange, fingerprintCaptured]);
 
   const handleConnectDevice = async () => {
     setIsDeviceLoading(true);
@@ -196,9 +147,14 @@ export function ClienteDialog({
 
   const handleSubmit = () => {
     if (!isEditing && !fingerprintCaptured && !form.huellaBiometrica) {
+      // Si el dispositivo no está disponible, permitir guardar sin huella
+      if (deviceError) {
+        onSubmit();
+        return;
+      }
       toast({
         title: "Error",
-        description: "Debes capturar la huella biométrica antes de guardar",
+        description: "Debes capturar la huella biométrica antes de guardar. Si el lector no funciona, ingresa el código manualmente.",
         variant: "destructive",
       });
       return;
@@ -369,7 +325,7 @@ export function ClienteDialog({
               </div>
             )}
 
-            {/* Capture Button */}
+            {/* Capture Button - solo cuando el dispositivo está conectado */}
             {deviceStatus?.connected && !fingerprintCaptured && (
               <Button
                 onClick={handleCaptureFingerprint}
@@ -411,15 +367,17 @@ export function ClienteDialog({
               </div>
             )}
 
-            {/* Editing mode: manual input */}
-            {isEditing && (
+            {/* Manual input: siempre disponible para nuevo cliente cuando el lector falla o no se usa */}
+            {(isEditing || (!deviceStatus?.connected && !isDeviceLoading)) && (
               <div className="mt-3">
                 <Label htmlFor="huellaBiometrica" className="text-xs">
-                  Código de huella (manual)
+                  {deviceError
+                    ? "Código de huella (ingreso manual - servicio no disponible)"
+                    : "Código de huella (manual)"}
                 </Label>
                 <Input
                   id="huellaBiometrica"
-                  placeholder="Código de huella"
+                  placeholder={deviceError ? "Ingresa el template manualmente" : "Código de huella"}
                   value={form.huellaBiometrica}
                   onChange={(e) =>
                     onFormChange({
@@ -429,6 +387,11 @@ export function ClienteDialog({
                   }
                   className="border-emerald-500/30 focus:border-emerald-500 mt-1"
                 />
+                {deviceError && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    El lector de huellas no está disponible. Puedes ingresar el código manualmente.
+                  </p>
+                )}
               </div>
             )}
           </div>

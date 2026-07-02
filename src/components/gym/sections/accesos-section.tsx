@@ -76,80 +76,8 @@ export function AccesosSection({
     onVerify();
   };
 
-  // Polling automático del lector de huellas cuando está en modo huella
-  useEffect(() => {
-    if (metodoAcceso !== "huella" || !onCaptureFingerprint) return;
-    
-    let cancelled = false;
-    let isProcessing = false; // Evitar capturas simultáneas
-    
-    const poll = async () => {
-      if (cancelled || isProcessing) return;
-      
-      try {
-        // Verificar si el servicio está activo directamente desde el navegador
-        const status = await checkFingerprintStatus();
-        if (!status.connected || !status.sensorReady) return;
-        
-        // Intentar capturar huella automáticamente
-        isProcessing = true;
-        const captureData = await captureFingerprint();
-        isProcessing = false;
-        
-        if (!captureData.success || !captureData.template) return;
-        
-        if (captureData.success && captureData.template && !cancelled) {
-          // Huella capturada automáticamente - llenar campo
-          setLastCapture(captureData.template);
-          handleHuellaChange(captureData.template);
-          
-          // Buscar si el cliente existe
-          const searchRes = await fetch('/api/fingerprint/search', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ template: captureData.template }),
-          });
-          
-          if (searchRes.ok) {
-            const searchData = await searchRes.json();
-            
-            if (searchData.found) {
-              // Cliente encontrado - auto-verificar acceso
-              toast({
-                title: "Cliente reconocido",
-                description: `${searchData.cliente.nombre} ${searchData.cliente.apellido} - Verificando acceso...`,
-              });
-              
-              // Auto-verificar después de 500ms
-              setTimeout(() => {
-                if (!cancelled) {
-                  onVerify();
-                }
-              }, 500);
-            } else {
-              // Cliente no encontrado - mostrar mensaje
-              toast({
-                title: "Huella no registrada",
-                description: "Esta huella no está asociada a ningún cliente. Ve a Clientes → Nuevo Cliente para registrarla.",
-                variant: "destructive",
-              });
-            }
-          }
-        }
-      } catch {
-        // Silenciar errores de polling
-      }
-    };
-    
-    // Polling cada 800ms mientras el servicio esté activo
-    const interval = setInterval(poll, 800);
-    poll(); // Primera captura inmediata
-    
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [metodoAcceso, onCaptureFingerprint, onVerify, onHuellaChange]);
+  // Captura de huella manual (sin polling automático para evitar saturar el servicio)
+  // El usuario debe hacer clic en el botón de captura para leer la huella
 
   return (
     <motion.div

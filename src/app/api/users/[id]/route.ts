@@ -42,7 +42,18 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { email, rol, empleadoId, activo } = await request.json();
+    const { email, rol, empleadoId, activo, empleadoData } = await request.json();
+
+    // Si se envían datos de empleado y existe empleadoId, actualizar el empleado vinculado
+    if (empleadoData && empleadoId) {
+      await db.empleado.update({
+        where: { id: empleadoId },
+        data: {
+          nombre: empleadoData.nombre,
+          telefono: empleadoData.telefono || null,
+        },
+      });
+    }
 
     const user = await db.user.update({
       where: { id },
