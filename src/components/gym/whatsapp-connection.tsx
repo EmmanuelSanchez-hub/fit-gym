@@ -62,7 +62,10 @@ export function WhatsAppConnection({ onConnectionChange }: WhatsAppConnectionPro
   }, [onConnectionChange]);
 
   // Initial fetch on mount
-  useEffect(() => { fetchStatus(); }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching en useEffect es el patrón estándar de React 
+    fetchStatus();
+   }, []);
 
   // Polling: siempre activo, rápido cuando está conectando o diálogo abierto
   useEffect(() => {
